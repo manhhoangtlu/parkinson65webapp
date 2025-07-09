@@ -21,22 +21,33 @@ except Exception as e:
     print(f"Lỗi khi cấu hình Gemini API: {e}")
     model = None
 
-# Cấu hình Google Sheets
+# Cấu hình Google Sheets để hoạt động trên cả local và Render
+worksheet = None
 try:
-    gc = gspread.service_account(filename='credentials.json')
-    spreadsheet = gc.open("Parkinson App Results") 
+    # Ưu tiên đọc từ biến môi trường (dành cho Render)
+    creds_json_str = os.getenv("GSPREAD_CREDENTIALS")
+    if creds_json_str:
+        creds_dict = json.loads(creds_json_str)
+        gc = gspread.service_account_from_dict(creds_dict)
+        print("Đã xác thực Google Sheets từ biến môi trường (Render).")
+    else:
+        # Nếu không có biến môi trường, đọc từ file (dành cho máy local)
+        gc = gspread.service_account(filename='credentials.json')
+        print("Đã xác thực Google Sheets từ file credentials.json (Local).")
+
+    # Mở trang tính bằng tên bạn đã tạo trong Google Drive
+    spreadsheet = gc.open("Parkinson App Results")
+    # Chọn sheet (trang tính) đầu tiên
     worksheet = spreadsheet.sheet1
     print("Đã kết nối thành công với Google Sheets.")
 except Exception as e:
-    print(f"LỖI: Không thể kết nối với Google Sheets. Hãy kiểm tra file credentials.json và cài đặt chia sẻ. Lỗi: {e}")
-    worksheet = None
+    print(f"LỖI: Không thể kết nối với Google Sheets. Lỗi: {e}")
 
 # Các hằng số
 QUIZ_POINTS_MAP = { "A. Không": 0, "B. Thi thoảng": 1, "C. Thường xuyên": 2 }
 
 
 # --- CÁC HÀM HỖ TRỢ ---
-
 def save_to_google_sheet(data):
     """
     Lưu một dòng kết quả mới vào Google Sheets.
@@ -49,7 +60,7 @@ def save_to_google_sheet(data):
     try:
         all_rows = worksheet.get_all_values()
         
-        # Thêm hàng tiêu đề nếu sheet hoàn toàn trống
+        # Nếu sheet trống, thêm hàng tiêu đề
         if not all_rows:
             headers = [
                 'bệnh nhân số', 'thời gian đo', 'điểm bảng câu hỏi', 
@@ -57,27 +68,25 @@ def save_to_google_sheet(data):
                 'bảng tần số run', 'bảng biên độ run'
             ]
             worksheet.append_row(headers)
-            all_rows.append(headers) # Cập nhật lại biến all_rows
+            all_rows.append(headers) # Cập nhật lại biến all_rows để tính ID
             print("Đã thêm hàng tiêu đề vào Google Sheet.")
 
-        # --- PHẦN SỬA LỖI: TÌM DÒNG DỮ LIỆU CUỐI CÙNG, BỎ QUA DÒNG TRỐNG ---
+        # Tìm dòng dữ liệu cuối cùng, bỏ qua các dòng trống có thể có ở cuối
         last_data_row = None
-        # Lặp ngược từ cuối danh sách để tìm hàng cuối cùng có dữ liệu
         for row in reversed(all_rows):
-            # Một hàng được coi là có dữ liệu nếu nó không rỗng và ô đầu tiên có giá trị
-            if row and row[0]:
+            if row and row[0]:  # Một hàng được coi là có dữ liệu nếu ô đầu tiên không trống
                 last_data_row = row
                 break
         
         # Tạo mã bệnh nhân mới
-        new_id = "0001" # Mặc định nếu không có dữ liệu
+        new_id = "0001" # Mặc định nếu chưa có dữ liệu
         if last_data_row:
             last_id_str = last_data_row[0]
-            # Bỏ qua hàng tiêu đề khi tính toán
+            # Chỉ tính toán nếu ID cuối cùng là một số (để tránh hàng tiêu đề)
             if last_id_str.isdigit():
                 new_id = f"{int(last_id_str) + 1:04d}"
 
-        # Chuẩn bị dữ liệu cho hàng mới
+        # Chuẩn bị dữ liệu cho hàng mới theo đúng thứ tự của tiêu đề
         new_row = [
             new_id,
             data.get('thời gian đo'),
@@ -105,7 +114,7 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=4):
     return y
 
 
-# === CÁC ROUTE VÀ API (Không thay đổi) ===
+# === CÁC ROUTE VÀ API ===
 
 @app.route('/')
 def index():
