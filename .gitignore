@@ -1,0 +1,14 @@
+# Môi trường ảo
+venv/
+.venv/
+
+# File biến môi trường (chứa API key)
+.env
+
+# Thư mục cache của Python
+__pycache__/
+*.pyc
+
+# File kết quả (không lưu lên GitHub)
+results.xlsx
+credentials.json

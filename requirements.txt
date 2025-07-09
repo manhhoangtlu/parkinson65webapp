@@ -1,9 +1,10 @@
+# requirements.txt
 Flask
 google-generativeai
 python-dotenv
 Flask-Cors
 numpy
-pandas
-openpyxl
 scipy
 gunicorn
+gspread
+google-auth-oauthlib
