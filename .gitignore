@@ -2,13 +2,14 @@
 venv/
 .venv/
 
-# File biến môi trường (chứa API key)
+# File biến môi trường và thông tin nhạy cảm
 .env
+credentials.json
 
 # Thư mục cache của Python
 __pycache__/
 *.pyc
+*.pyo
 
 # File kết quả (không lưu lên GitHub)
 results.xlsx
-credentials.json
