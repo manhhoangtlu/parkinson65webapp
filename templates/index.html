@@ -44,8 +44,7 @@
         <div class="container mx-auto flex justify-between items-center">
             <img src="{{ url_for('static', filename='images/result.png') }}" alt="Logo Trường" class="h-16 w-16 object-contain">
             <div class="text-center">
-                <h1 class="text-lg sm:text-xl md:text-2xl font-bold text-blue-800">NGHIÊN CỨU THUẬT TOÁN CHẨN ĐOÁN VÀ HỖ TRỢ ĐIỀU TRỊ BỆNH PARKINSON</h1>
-                <p class="text-sm md:text-base text-gray-600">ỨNG DỤNG CÔNG NGHỆ XỬ LÝ ẢNH - PHIÊN BẢN WEB</p>
+                <h1 class="text-lg sm:text-xl md:text-2xl font-bold text-blue-800">NGHIÊN CỨU XÂY DỰNG HỆ SINH THÁI GIÚP CHẨN ĐOÁN SỚM VÀ ĐIỀU TRỊ CHO NGƯỜI BỆNH PARKINSON</h1>
             </div>
             <img src="{{ url_for('static', filename='images/logo2.jpg') }}" alt="Logo Khoa" class="h-16 w-16 object-contain">
         </div>
@@ -55,7 +54,7 @@
         </main>
     
     <footer class="bg-white shadow-t-md p-4 sticky bottom-0 z-40">
-        <div class="container mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="container mx-auto grid grid-cols-2 md:grid-cols-6 gap-4">
             <button data-view="quiz" class="nav-btn flex flex-col items-center p-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                 <span>Bộ câu hỏi</span>
@@ -71,6 +70,14 @@
             <button data-view="doctor" class="nav-btn flex flex-col items-center p-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 <span>Liên hệ Bác sĩ</span>
+            </button>
+            <button data-view="team" class="nav-btn flex flex-col items-center p-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>Nhóm Nghiên Cứu</span>
+            </button>
+            <button data-view="baitap" class="nav-btn flex flex-col items-center p-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path></svg>
+                <span>Bài Tập</span>
             </button>
         </div>
         <div class="text-center text-gray-500 text-xs mt-4">
