@@ -143,21 +143,49 @@ document.addEventListener('DOMContentLoaded', () => {
             'quiz': renderQuizView,
             'diagnosis': renderDiagnosisView,
             'gamma': renderGammaView,
-            'doctor': renderDoctorView
+            'doctor': renderDoctorView,
+            'team': renderTeamView
         };
         (renderMap[viewName] || renderWelcomeView)();
     }
 
+
     function renderWelcomeView() {
-        mainContentArea.innerHTML = `<div class="text-center"><h2 class="text-4xl font-bold text-gray-800 mb-4">Chào mừng!</h2><p class="text-lg text-gray-600">Chọn một chức năng bên dưới để bắt đầu.</p></div>`;
+        mainContentArea.innerHTML = `<div class="text-center"><h2 class="text-4xl font-bold text-gray-800 mb-4">Chào mừng!</h2><p class="text-lg text-gray-600">Chọn một chức để bắt đầu.</p></div>`;
     }
 
     function renderQuizView() {
         let currentQuestionIndex = 0;
         let userAnswers = {};
+        
+        // ++ Show info
+        function displayAskInfo() {
+            mainContentArea.innerHTML = `
+                 <div class="w-full max-w-2xl bg-white p-8 rounded-xl shadow-lg">
+                    <p class="text-gray-500 mb-1">Thông tin</p>
+                    <input
+                      id='user-name-input'
+                      type="text"
+                      placeholder="Nhập tên..."
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+
+                        <button id="display-question-btn" class="mt-8 w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">Tiếp theo</button>
+                </div>`;
+
+            document.getElementById('display-question-btn').addEventListener('click', displayQuestion);
+        }
 
         function displayQuestion() {
             const question = quizQuestions[currentQuestionIndex];
+
+            // ++ Add username
+            if (document.getElementById('user-name-input')) {
+                userAnswers['userName'] = document.getElementById('user-name-input').value;
+                console.log(userAnswers['userName'])
+            }
+
+
             mainContentArea.innerHTML = `
                 <div class="w-full max-w-2xl bg-white p-8 rounded-xl shadow-lg">
                     <p class="text-gray-500">Câu hỏi ${currentQuestionIndex + 1} / ${quizQuestions.length}</p>
@@ -183,22 +211,26 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentQuestionIndex < quizQuestions.length) displayQuestion();
             else showQuizResults(userAnswers);
         }
-        displayQuestion();
+        displayAskInfo();
     }
 
     async function showQuizResults(userAnswers) {
+        console.log(userAnswers)
+        console.log(userAnswers.userName)
         showModal("Đang xử lý", "Đang gửi kết quả lên máy chủ...", true);
+        let userName = userAnswers['userName'];
+        // Thêm trường name
         try {
             const response = await fetch('/api/submit_quiz', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ answers: userAnswers })
+                body: JSON.stringify({ answers: userAnswers, name: userName })
             });
             if (!response.ok) throw new Error('Lỗi khi gửi kết quả quiz.');
             const result = await response.json();
             const score = result.score;
 
-            appState.quizResult = { score, answers: userAnswers }; 
+            appState.quizResult = { score, answers: userAnswers, name: userName }; 
             hideModal();
 
             const totalPossibleScore = quizQuestions.length * 2;
@@ -300,6 +332,54 @@ document.addEventListener('DOMContentLoaded', () => {
         const prepButton = document.getElementById('ai-doctor-prep-btn');
         prepButton.disabled = !(appState.quizResult && appState.diagnosisResult);
         prepButton.addEventListener('click', handleAiDoctorPrep);
+    }
+
+    function renderTeamView() {
+        mainContentArea.innerHTML = `
+            <div class="w-full max-w-4xl mx-auto text-center p-4">
+                <h2 class="text-3xl font-bold text-gray-800 mb-8">Thông tin Nhóm Nghiên cứu</h2>
+
+                <div class="mb-10">
+                    <h3 class="text-2xl font-semibold text-indigo-700 mb-4">Giảng viên hướng dẫn</h3>
+                    <div class="inline-block bg-white p-6 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-300">
+                        <img src="https://scontent.fhan3-3.fna.fbcdn.net/v/t39.30808-6/486074380_3184971494975671_8009404921995578872_n.jpg?_nc_cat=111&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeF1KWXe-F-BRHVQcWOpC2rxc2K6ryanBSdzYrqvJqcFJ5zRLmSO6a9jHx43fWM2w-FYQgHxGXrzUa-a7v2e87Dz&_nc_ohc=U4OI6134hUQQ7kNvwF3Jolc&_nc_oc=Adn4GjVOvBDOWEaLrLyRDn-Qc-3MrXpNKsiecfBLbbVvhPmVwdcf6piBKELdgWRA2LY&_nc_zt=23&_nc_ht=scontent.fhan3-3.fna&_nc_gid=MOrlqogMPLRhOggflYMQ7g&oh=00_AfQ1GYAkfwUX5rqjU9D9SuR9ESFNKRHBV6DMjpx__IBNiw&oe=688E1F2F" alt="Avatar giảng viên" class="w-24 h-24 rounded-full mx-auto mb-3 border-4 border-indigo-200 object-cover">
+                        <p class="text-xl font-bold text-gray-900">TS. Ngô Quang Vĩ</p>
+                        <p class="text-md text-gray-600">Khoa Điện - Điện Tử</p>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-semibold text-purple-700 mb-6">Thành viên thực hiện</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+
+                        <div class="bg-white p-5 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-300">
+                            <img src="https://scontent.fhan4-3.fna.fbcdn.net/v/t39.30808-1/500608973_1463414898358865_7062293104784996257_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=110&ccb=1-7&_nc_sid=1d2534&_nc_eui2=AeGHzZkMeYStID6Go19RPANsp-NptLgcHAun42m0uBwcC4no-kBHWpVRqsVeLqJUFhjlqwc8WFTqmulPPcVDRIpR&_nc_ohc=T6Bm1XidUsMQ7kNvwG9wulD&_nc_oc=AdlaLDHwl6mRgTCBH59v-gyPA7BDuFBD4AYT4NHtVLRux8057GXFhuWjXnRbJr-qR5I&_nc_zt=24&_nc_ht=scontent.fhan4-3.fna&_nc_gid=FeeElU93q6OQfQSLxIbKyg&oh=00_AfRB3SPVLGBIsYRa0dewyUYWSUZkhP9UlBpBbxE2uCRf8w&oe=688E291B" alt="Avatar thành viên" class="w-20 h-20 rounded-full mx-auto mb-3 border-4 border-purple-100 object-cover">
+                            <p class="text-lg font-bold text-gray-800">Đinh Mạnh Hoàng</p>
+                            <p class="text-sm text-gray-500">Mã sinh viên: 2351281952</p>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-300">
+                            <img src="https://scontent.fhan3-2.fna.fbcdn.net/v/t39.30808-1/495349752_694460336405766_1341353726955587676_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=107&ccb=1-7&_nc_sid=1d2534&_nc_eui2=AeEzsDJebXrJFx26AchBifza_MiZJjI3osb8yJkmMjeixoALF_J0MeSu2GBN5Db1Gh7UBttBQd0X9jkMfPIrzGqp&_nc_ohc=8TScy_KLaKEQ7kNvwHw1Zox&_nc_oc=Adl4Fe6cCHHSuedDHP_vSsfOkZwtBZSrPDyCmvE-Uzz0oKYT0zl8ErNtMOUI6W_DUIg&_nc_zt=24&_nc_ht=scontent.fhan3-2.fna&_nc_gid=LXQfvjobgX1J469N55mUJA&oh=00_AfSV_hAsidzdmhIizo2LNVvu5P2UeWLmVPdW_RRr2r4Cnw&oe=688E209F" alt="Avatar thành viên" class="w-20 h-20 rounded-full mx-auto mb-3 border-4 border-purple-100 object-cover">
+                            <p class="text-lg font-bold text-gray-800">Nguyễn Thị Quỳnh</p>
+                            <p class="text-sm text-gray-500">Mã sinh viên: 2351281974</p>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-300">
+                            <img src="https://scontent.fhan3-4.fna.fbcdn.net/v/t39.30808-6/481055917_1172795004304698_5006080809306805812_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=a5f93a&_nc_eui2=AeFvtCuYDh-xm39dN9abJEyoliMt_7VWowyWIy3_tVajDCG15uljFw8_p-hB92Mg4hfJDICh8x3Nco52h96Wl_-f&_nc_ohc=6OeTG8Ux5kgQ7kNvwEdms0_&_nc_oc=AdlL2Qpu9FOKj780-bbBvzbmt6XtHetnNXlHf_iWGVhkaoNWaTT2DyZmMyxuodZEJMU&_nc_zt=23&_nc_ht=scontent.fhan3-4.fna&_nc_gid=S83P6cRSEyuyiEWL2YAPFA&oh=00_AfQrLI3CPA1r0bBMVRx9hWbcA6I5fHFr7fyAIy6CWsA29Q&oe=688E2E99" alt="Avatar thành viên" class="w-20 h-20 rounded-full mx-auto mb-3 border-4 border-purple-100 object-cover">
+                            <p class="text-lg font-bold text-gray-800">Lê Trung Hiếu</p>
+                            <p class="text-sm text-gray-500">Mã sinh viên: 2351281949</p>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-300">
+                            <img src="https://scontent.fhan3-4.fna.fbcdn.net/v/t1.6435-9/70288778_104083377639385_3575547307413733376_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeH3_M6jvwOqSiQGNlgikxBaTBmy_hFR3nVMGbL-EVHedYku0WPtmEBLFH2BZvjf_iaenBnw2TawyiIskxH8k3lq&_nc_ohc=0lTt4LDkdOIQ7kNvwGYHlgs&_nc_oc=AdmeWrU5vmVFztdht8AyN8q9hZOBe69Yoh---FEM1uJHKDk9sjRSKGlMwYejvfx01U0&_nc_zt=23&_nc_ht=scontent.fhan3-4.fna&_nc_gid=4gruAKB13s6Bc7wezW5h6Q&oh=00_AfS3k0eFrm2Be43nwcT1i-LZDzDd-cx32P5_Wpd3hEXkdg&oe=68AFBF52" alt="Avatar thành viên" class="w-20 h-20 rounded-full mx-auto mb-3 border-4 border-purple-100 object-cover">
+                            <p class="text-lg font-bold text-gray-800">Nguyễn Viết Hiệp</p>
+                            <p class="text-sm text-gray-500">Mã sinh viên: 2351281938</p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     // --- LOGIC MEDIAPIPE & CHẨN ĐOÁN ---

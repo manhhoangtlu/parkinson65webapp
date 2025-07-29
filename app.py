@@ -23,8 +23,9 @@ except Exception as e:
 
 # Cấu hình Google Sheets để hoạt động trên cả local và Render
 worksheet = None
+
 try:
-    # Ưu tiên đọc từ biến môi trường (dành cho Render)
+# Ưu tiên đọc từ biến môi trường (dành cho Render)
     creds_json_str = os.getenv("GSPREAD_CREDENTIALS")
     if creds_json_str:
         creds_dict = json.loads(creds_json_str)
@@ -35,9 +36,9 @@ try:
         gc = gspread.service_account(filename='credentials.json')
         print("Đã xác thực Google Sheets từ file credentials.json (Local).")
 
-    # Mở trang tính bằng tên bạn đã tạo trong Google Drive
+# Mở trang tính bằng tên bạn đã tạo trong Google Drive
     spreadsheet = gc.open("Parkinson App Results")
-    # Chọn sheet (trang tính) đầu tiên
+# Chọn sheet (trang tính) đầu tiên
     worksheet = spreadsheet.sheet1
     print("Đã kết nối thành công với Google Sheets.")
 except Exception as e:
@@ -63,7 +64,7 @@ def save_to_google_sheet(data):
         # Nếu sheet trống, thêm hàng tiêu đề
         if not all_rows:
             headers = [
-                'bệnh nhân số', 'thời gian đo', 'điểm bảng câu hỏi', 
+                'bệnh nhân số', 'thời gian đo', 'họ và tên', 'điểm bảng câu hỏi', 
                 'câu trả lời từng câu hỏi', 'tần số run', 
                 'bảng tần số run', 'bảng biên độ run'
             ]
@@ -90,6 +91,7 @@ def save_to_google_sheet(data):
         new_row = [
             new_id,
             data.get('thời gian đo'),
+            data.get('họ và tên'),
             data.get('điểm bảng câu hỏi'),
             data.get('câu trả lời từng câu hỏi'),
             data.get('tần số run'),
@@ -123,6 +125,8 @@ def index():
 @app.route('/api/submit_quiz', methods=['POST'])
 def submit_quiz():
     answers = request.get_json().get('answers')
+    name = request.get_json().get('name')
+    print(name)
     if not answers:
         return jsonify({'error': 'Không có câu trả lời nào được cung cấp'}), 400
     score = sum(QUIZ_POINTS_MAP.get(value, 0) for value in answers.values())
@@ -133,6 +137,9 @@ def analyze_tremor():
     data = request.get_json()
     tremor_data = data.get('tremor_data')
     quiz_data = data.get('quiz_data')
+
+    # Remove userName in answers
+    quiz_data.get('answers').pop('userName')
 
     if not tremor_data or not quiz_data:
         return jsonify({'error': 'Thiếu dữ liệu run hoặc quiz'}), 400
@@ -171,6 +178,7 @@ def analyze_tremor():
 
     excel_data = {
         'thời gian đo': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        'họ và tên': quiz_data.get('name'), 
         'điểm bảng câu hỏi': quiz_data.get('score'),
         'câu trả lời từng câu hỏi': json.dumps(quiz_data.get('answers'), ensure_ascii=False),
         'tần số run': f"{peak_freq:.2f}",
