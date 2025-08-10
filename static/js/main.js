@@ -595,6 +595,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function predictWebcam() {
+        // ++ THEM CHO NAY
+        function drawDot(x, y, radius = 3, color = 'blue') {
+            canvasCtx.beginPath();
+            canvasCtx.arc(x, y, radius, 0, 2 * Math.PI);  // Vẽ hình tròn
+            canvasCtx.fillStyle = color;                 // Màu chấm
+            canvasCtx.fill();                            // Tô màu
+        }
+        
+        function drawLine(x1, y1, x2, y2, color = 'black', width = 3) {
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(x1, y1);      // điểm bắt đầu
+            canvasCtx.lineTo(x2, y2);      // điểm kết thúc
+            canvasCtx.strokeStyle = color;
+            canvasCtx.lineWidth = width;
+            canvasCtx.stroke();            // vẽ đường
+        }
+
+        function toXY(x, y) {
+            return Math.floor(x * canvasElement.width), Math.floor(y * canvasElement.height);
+        }
+
+        // ++        
         if (currentView !== 'diagnosis' || !video || (!video.srcObject && !video.currentSrc)) return;
         if (video.readyState < 2) {
             if (!video.ended) window.requestAnimationFrame(predictWebcam);
@@ -614,8 +636,89 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (handResults.landmarks && handResults.landmarks.length > 0) {
                 for (const landmarks of handResults.landmarks) {
-                    drawingUtils.drawConnectors(landmarks, HandLandmarker.HAND_CONNECTIONS, { color: "#007BFF", lineWidth: 3 });
-                    drawingUtils.drawLandmarks(landmarks, { color: "#FFFFFF", radius: 3, lineWidth: 1 });
+                    // drawingUtils.drawConnectors(landmarks, HandLandmarker.HAND_CONNECTIONS, { color: "#007BFF", lineWidth: 3 });
+                    // drawingUtils.drawLandmarks(landmarks, { color: "#FFFFFF", radius: 3, lineWidth: 1 });
+                    // ++ CHO NAY NUA
+                    let pre_x = 0;
+                    let pre_y = 0;
+                    let linecolor = 'gray';
+                    let lm = [...landmarks];
+
+                    for (const lm_ of lm) {
+                        lm_.x = Math.floor(lm_.x * canvasElement.width);
+                        lm_.y = Math.floor(lm_.y * canvasElement.height);
+                    }
+
+                    drawLine(lm[0].x, lm[0].y, lm[1].x, lm[1].y, linecolor);
+                    drawLine(lm[0].x, lm[0].y, lm[17].x, lm[17].y, linecolor);
+                    drawLine(lm[0].x, lm[0].y, lm[5].x, lm[5].y, linecolor);
+                    drawLine(lm[5].x, lm[5].y, lm[9].x, lm[9].y, linecolor);
+                    drawLine(lm[9].x, lm[9].y, lm[13].x, lm[13].y, linecolor);
+                    drawLine(lm[13].x, lm[13].y, lm[17].x, lm[17].y, linecolor);
+
+                    linecolor = 'white';
+                   
+                    for (let i = 1; i <= 3; i++) {
+                        drawLine(lm[i].x, lm[i].y, lm[i + 1].x, lm[i + 1].y, linecolor);
+                    }
+
+                    linecolor = 'purple';
+
+                    for (let i = 5; i <= 7; i++) {
+                        drawLine(lm[i].x, lm[i].y, lm[i + 1].x, lm[i + 1].y, linecolor);
+                    }
+
+                    linecolor = 'yellow'; 
+
+                    for (let i = 9; i <= 11; i++) {
+                        drawLine(lm[i].x, lm[i].y, lm[i + 1].x, lm[i + 1].y, linecolor);
+                    }
+
+                    linecolor = 'green'; 
+
+                    for (let i = 13; i <= 15; i++) {
+                        drawLine(lm[i].x, lm[i].y, lm[i + 1].x, lm[i + 1].y, linecolor);
+                    }
+
+                    linecolor = 'blue'; 
+
+                    for (let i = 17; i <= 19; i++) {
+                        drawLine(lm[i].x, lm[i].y, lm[i + 1].x, lm[i + 1].y, linecolor);
+                    }
+
+                    for (const [i, landmark] of landmarks.entries()) {
+                        //let x = Math.floor(landmark.x * canvasElement.width);
+                        //let y = Math.floor(landmark.y * canvasElement.height);
+                        let x = lm[i].x;
+                        let y = lm[i].y;
+                        let color = 'red';
+
+
+                        if ([2, 3, 4].includes(i)) {
+                            color = 'white';
+                        } else if ([6, 7, 8].includes(i)) {
+                            color = 'purple';
+                        } else if ([10, 11, 12].includes(i)) {
+                            color = 'yellow';
+                        } else if ([14, 15, 16].includes(i)) {
+                            color = 'green';
+                        } else if ([18, 19, 20].includes(i)) {
+                            color = 'blue';
+                        }
+                        
+                        drawDot(x, y, 7, color); 
+
+                        canvasCtx.lineWidth = 2;
+                        canvasCtx.strokeStyle = 'white';
+                        canvasCtx.stroke();  
+
+                        
+
+                        pre_x = x;
+                        pre_y = y;
+                    }                    
+                    
+                    
                     for (const fingerName in FINGER_DEFINITIONS) {
                         const tipLandmark = landmarks[FINGER_DEFINITIONS[fingerName]];
                         if (tipLandmark) {
