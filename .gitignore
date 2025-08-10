@@ -13,3 +13,6 @@ __pycache__/
 
 # File kết quả (không lưu lên GitHub)
 results.xlsx
+
+desktop.ini
+Thumbs.db

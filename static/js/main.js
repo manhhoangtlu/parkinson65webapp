@@ -144,54 +144,33 @@ document.addEventListener('DOMContentLoaded', () => {
             'diagnosis': renderDiagnosisView,
             'gamma': renderGammaView,
             'doctor': renderDoctorView,
-            'team': renderTeamView
+            'team': renderTeamView,
+            'baitap': renderBaitapView,
+            'history': renderHistoryView,
         };
         (renderMap[viewName] || renderWelcomeView)();
     }
 
 
     function renderWelcomeView() {
-        mainContentArea.innerHTML = `<div class="text-center"><h2 class="text-4xl font-bold text-gray-800 mb-4">Chào mừng!</h2><p class="text-lg text-gray-600">Chọn một chức để bắt đầu.</p></div>`;
+        mainContentArea.innerHTML = `<div class="text-center"><h2 class="text-4xl font-bold text-gray-800 mb-4">Chào mừng!</h2><p class="text-lg text-gray-600">Chọn một chức năng để bắt đầu.</p></div>`;
     }
 
     function renderQuizView() {
         let currentQuestionIndex = 0;
         let userAnswers = {};
-        
-        // ++ Show info
-        function displayAskInfo() {
-            mainContentArea.innerHTML = `
-                 <div class="w-full max-w-2xl bg-white p-8 rounded-xl shadow-lg">
-                    <p class="text-gray-500 mb-1">Thông tin</p>
-                    <input
-                      id='user-name-input'
-                      type="text"
-                      placeholder="Nhập tên..."
-                      class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
 
-                        <button id="display-question-btn" class="mt-8 w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">Tiếp theo</button>
-                </div>`;
-
-            document.getElementById('display-question-btn').addEventListener('click', displayQuestion);
-        }
+        // LẤY TÊN TỪ PHIÊN ĐĂNG NHẬP (thông qua data attribute)
+        const loggedInUserName = document.body.dataset.userName;
 
         function displayQuestion() {
             const question = quizQuestions[currentQuestionIndex];
-
-            // ++ Add username
-            if (document.getElementById('user-name-input')) {
-                userAnswers['userName'] = document.getElementById('user-name-input').value;
-                console.log(userAnswers['userName'])
-            }
-
-
             mainContentArea.innerHTML = `
-                <div class="w-full max-w-2xl bg-white p-8 rounded-xl shadow-lg">
+                <div class="w-full max-w-2xl bg-white p-8 rounded-xl shadow-lg animate-fade-in">
                     <p class="text-gray-500">Câu hỏi ${currentQuestionIndex + 1} / ${quizQuestions.length}</p>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1"><div class="bg-blue-600 h-2.5 rounded-full" style="width: ${((currentQuestionIndex + 1) / quizQuestions.length) * 100}%"></div></div>
                     <h3 class="text-2xl font-semibold my-6 text-gray-800">${question.text}</h3>
-                    <div class="space-y-4">${question.options.map((opt, index) => `<div><input type="radio" id="option${index}" name="quizOption" value="${index}" class="hidden peer"><label for="option${index}" class="block cursor-pointer select-none rounded-xl p-4 text-center text-gray-700 border-2 border-gray-300 peer-checked:bg-blue-500 peer-checked:font-bold peer-checked:text-white">${opt}</label></div>`).join('')}</div>
+                    <div class="space-y-4">${question.options.map((opt, index) => `<div><input type="radio" id="option${index}" name="quizOption" value="${index}" class="hidden peer"><label for="option${index}" class="block cursor-pointer select-none rounded-xl p-4 text-center text-gray-700 border-2 border-gray-300 peer-checked:bg-blue-500 peer-checked:font-bold peer-checked:text-white transition-all">${opt}</label></div>`).join('')}</div>
                     <button id="next-question-btn" class="mt-8 w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">Tiếp theo</button>
                 </div>`;
             document.getElementById('next-question-btn').addEventListener('click', nextQuestion);
@@ -208,25 +187,31 @@ document.addEventListener('DOMContentLoaded', () => {
             userAnswers[questionKey] = answerText;
 
             currentQuestionIndex++;
-            if (currentQuestionIndex < quizQuestions.length) displayQuestion();
-            else showQuizResults(userAnswers);
+            if (currentQuestionIndex < quizQuestions.length) {
+                displayQuestion();
+            } else {
+                showQuizResults(userAnswers);
+            }
         }
-        displayAskInfo();
+
+        displayQuestion();
     }
 
     async function showQuizResults(userAnswers) {
-        console.log(userAnswers)
-        console.log(userAnswers.userName)
         showModal("Đang xử lý", "Đang gửi kết quả lên máy chủ...", true);
-        let userName = userAnswers['userName'];
-        // Thêm trường name
+        
+        // SỬA LỖI: Lấy tên người dùng đã đăng nhập từ body
+        const userName = document.body.dataset.userName;
+
         try {
             const response = await fetch('/api/submit_quiz', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ answers: userAnswers, name: userName })
+                body: JSON.stringify({ answers: userAnswers, name: userName }) 
             });
+
             if (!response.ok) throw new Error('Lỗi khi gửi kết quả quiz.');
+            
             const result = await response.json();
             const score = result.score;
 
@@ -234,10 +219,10 @@ document.addEventListener('DOMContentLoaded', () => {
             hideModal();
 
             const totalPossibleScore = quizQuestions.length * 2;
-            let resultMessage = `Tổng điểm của cô/chú là: <strong>${score} / ${totalPossibleScore}</strong><br><br>${score > 6 ? "Dựa trên câu trả lời, có một số dấu hiệu của bệnh Parkinson. Vui lòng tham khảo ý kiến bác sĩ." : "Không nhận thấy các dấu hiệu rõ ràng. Tuy nhiên, nếu có bất kỳ lo lắng nào, hãy tham khảo ý kiến bác sĩ."}`;
+            let resultMessage = `Tổng điểm của bạn là: <strong>${score} / ${totalPossibleScore}</strong><br><br>${score > 6 ? "Dựa trên câu trả lời, có một số dấu hiệu của bệnh Parkinson. Vui lòng tham khảo ý kiến bác sĩ." : "Không nhận thấy các dấu hiệu rõ ràng. Tuy nhiên, nếu có bất kỳ lo lắng nào, hãy tham khảo ý- kiến bác sĩ."}`;
             
             mainContentArea.innerHTML = `
-                <div class="text-center w-full max-w-2xl bg-white p-8 rounded-xl shadow-lg">
+                <div class="text-center w-full max-w-2xl bg-white p-8 rounded-xl shadow-lg animate-fade-in">
                     <h2 class="text-3xl font-bold text-gray-800 mb-4">Hoàn thành!</h2>
                     <p class="text-lg text-gray-600">${resultMessage}</p>
                     <div class="mt-8 space-x-4">
@@ -247,6 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`;
             document.getElementById('restart-quiz-btn').addEventListener('click', () => switchView('quiz'));
             document.getElementById('ai-analysis-btn').addEventListener('click', handleAiQuizAnalysis);
+
         } catch (error) {
             hideModal();
             showModal("Lỗi", "Không thể lấy điểm từ máy chủ.");
@@ -342,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="mb-10">
                     <h3 class="text-2xl font-semibold text-indigo-700 mb-4">Giảng viên hướng dẫn</h3>
                     <div class="inline-block bg-white p-6 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-300">
-                        <img src="https://scontent.fhan3-3.fna.fbcdn.net/v/t39.30808-6/486074380_3184971494975671_8009404921995578872_n.jpg?_nc_cat=111&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeF1KWXe-F-BRHVQcWOpC2rxc2K6ryanBSdzYrqvJqcFJ5zRLmSO6a9jHx43fWM2w-FYQgHxGXrzUa-a7v2e87Dz&_nc_ohc=U4OI6134hUQQ7kNvwF3Jolc&_nc_oc=Adn4GjVOvBDOWEaLrLyRDn-Qc-3MrXpNKsiecfBLbbVvhPmVwdcf6piBKELdgWRA2LY&_nc_zt=23&_nc_ht=scontent.fhan3-3.fna&_nc_gid=MOrlqogMPLRhOggflYMQ7g&oh=00_AfQ1GYAkfwUX5rqjU9D9SuR9ESFNKRHBV6DMjpx__IBNiw&oe=688E1F2F" alt="Avatar giảng viên" class="w-24 h-24 rounded-full mx-auto mb-3 border-4 border-indigo-200 object-cover">
+                        <img src="/static/images/gv-ngo-quang-vi.jpg" alt="Avatar giảng viên" class="w-24 h-24 rounded-full mx-auto mb-3 border-4 border-indigo-200 object-cover">
                         <p class="text-xl font-bold text-gray-900">TS. Ngô Quang Vĩ</p>
                         <p class="text-md text-gray-600">Khoa Điện - Điện Tử</p>
                     </div>
@@ -353,25 +339,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
 
                         <div class="bg-white p-5 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-300">
-                            <img src="https://scontent.fhan4-3.fna.fbcdn.net/v/t39.30808-1/500608973_1463414898358865_7062293104784996257_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=110&ccb=1-7&_nc_sid=1d2534&_nc_eui2=AeGHzZkMeYStID6Go19RPANsp-NptLgcHAun42m0uBwcC4no-kBHWpVRqsVeLqJUFhjlqwc8WFTqmulPPcVDRIpR&_nc_ohc=T6Bm1XidUsMQ7kNvwG9wulD&_nc_oc=AdlaLDHwl6mRgTCBH59v-gyPA7BDuFBD4AYT4NHtVLRux8057GXFhuWjXnRbJr-qR5I&_nc_zt=24&_nc_ht=scontent.fhan4-3.fna&_nc_gid=FeeElU93q6OQfQSLxIbKyg&oh=00_AfRB3SPVLGBIsYRa0dewyUYWSUZkhP9UlBpBbxE2uCRf8w&oe=688E291B" alt="Avatar thành viên" class="w-20 h-20 rounded-full mx-auto mb-3 border-4 border-purple-100 object-cover">
+                            <img src="/static/images/sv-dinh-manh-hoang.jpg" alt="Avatar thành viên" class="w-20 h-20 rounded-full mx-auto mb-3 border-4 border-purple-100 object-cover">
                             <p class="text-lg font-bold text-gray-800">Đinh Mạnh Hoàng</p>
                             <p class="text-sm text-gray-500">Mã sinh viên: 2351281952</p>
                         </div>
 
                         <div class="bg-white p-5 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-300">
-                            <img src="https://scontent.fhan3-2.fna.fbcdn.net/v/t39.30808-1/495349752_694460336405766_1341353726955587676_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=107&ccb=1-7&_nc_sid=1d2534&_nc_eui2=AeEzsDJebXrJFx26AchBifza_MiZJjI3osb8yJkmMjeixoALF_J0MeSu2GBN5Db1Gh7UBttBQd0X9jkMfPIrzGqp&_nc_ohc=8TScy_KLaKEQ7kNvwHw1Zox&_nc_oc=Adl4Fe6cCHHSuedDHP_vSsfOkZwtBZSrPDyCmvE-Uzz0oKYT0zl8ErNtMOUI6W_DUIg&_nc_zt=24&_nc_ht=scontent.fhan3-2.fna&_nc_gid=LXQfvjobgX1J469N55mUJA&oh=00_AfSV_hAsidzdmhIizo2LNVvu5P2UeWLmVPdW_RRr2r4Cnw&oe=688E209F" alt="Avatar thành viên" class="w-20 h-20 rounded-full mx-auto mb-3 border-4 border-purple-100 object-cover">
+                            <img src="/static/images/sv-nguyen-thi-quynh.jpg" alt="Avatar thành viên" class="w-20 h-20 rounded-full mx-auto mb-3 border-4 border-purple-100 object-cover">
                             <p class="text-lg font-bold text-gray-800">Nguyễn Thị Quỳnh</p>
                             <p class="text-sm text-gray-500">Mã sinh viên: 2351281974</p>
                         </div>
 
                         <div class="bg-white p-5 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-300">
-                            <img src="https://scontent.fhan3-4.fna.fbcdn.net/v/t39.30808-6/481055917_1172795004304698_5006080809306805812_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=a5f93a&_nc_eui2=AeFvtCuYDh-xm39dN9abJEyoliMt_7VWowyWIy3_tVajDCG15uljFw8_p-hB92Mg4hfJDICh8x3Nco52h96Wl_-f&_nc_ohc=6OeTG8Ux5kgQ7kNvwEdms0_&_nc_oc=AdlL2Qpu9FOKj780-bbBvzbmt6XtHetnNXlHf_iWGVhkaoNWaTT2DyZmMyxuodZEJMU&_nc_zt=23&_nc_ht=scontent.fhan3-4.fna&_nc_gid=S83P6cRSEyuyiEWL2YAPFA&oh=00_AfQrLI3CPA1r0bBMVRx9hWbcA6I5fHFr7fyAIy6CWsA29Q&oe=688E2E99" alt="Avatar thành viên" class="w-20 h-20 rounded-full mx-auto mb-3 border-4 border-purple-100 object-cover">
+                            <img src="/static/images/sv-le-trung-hieu.jpg" alt="Avatar thành viên" class="w-20 h-20 rounded-full mx-auto mb-3 border-4 border-purple-100 object-cover">
                             <p class="text-lg font-bold text-gray-800">Lê Trung Hiếu</p>
                             <p class="text-sm text-gray-500">Mã sinh viên: 2351281949</p>
                         </div>
 
                         <div class="bg-white p-5 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-300">
-                            <img src="https://scontent.fhan3-4.fna.fbcdn.net/v/t1.6435-9/70288778_104083377639385_3575547307413733376_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeH3_M6jvwOqSiQGNlgikxBaTBmy_hFR3nVMGbL-EVHedYku0WPtmEBLFH2BZvjf_iaenBnw2TawyiIskxH8k3lq&_nc_ohc=0lTt4LDkdOIQ7kNvwGYHlgs&_nc_oc=AdmeWrU5vmVFztdht8AyN8q9hZOBe69Yoh---FEM1uJHKDk9sjRSKGlMwYejvfx01U0&_nc_zt=23&_nc_ht=scontent.fhan3-4.fna&_nc_gid=4gruAKB13s6Bc7wezW5h6Q&oh=00_AfS3k0eFrm2Be43nwcT1i-LZDzDd-cx32P5_Wpd3hEXkdg&oe=68AFBF52" alt="Avatar thành viên" class="w-20 h-20 rounded-full mx-auto mb-3 border-4 border-purple-100 object-cover">
+                            <img src="/static/images/sv-nguyen-viet-hiep.jpg" alt="Avatar thành viên" class="w-20 h-20 rounded-full mx-auto mb-3 border-4 border-purple-100 object-cover">
                             <p class="text-lg font-bold text-gray-800">Nguyễn Viết Hiệp</p>
                             <p class="text-sm text-gray-500">Mã sinh viên: 2351281938</p>
                         </div>
@@ -380,6 +366,171 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
+    }
+
+    function renderBaitapView() {
+        mainContentArea.innerHTML = `
+            <div class="w-full max-w-5xl mx-auto p-4">
+                <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Bài tập Phục hồi Chức năng</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+                    <a href="https://www.youtube.com/watch?v=YtvpZXA-WbY" target="_blank" class="block bg-white p-6 rounded-xl shadow-lg text-center transform hover:-translate-y-2 transition-transform duration-300 no-underline">
+                        <div class="text-6xl mb-4">😙</div>
+                        <h3 class="text-xl font-bold text-teal-700 mb-2">
+                            <span contenteditable="true" class="focus:outline-none focus:ring-2 focus:ring-teal-500 rounded-md px-1">
+                                Tập cơ mặt
+                            </span>
+                        </h3>
+                        <p class="text-gray-600">
+                        <span contenteditable="true" class="focus:outline-none focus:ring-2 focus:ring-gray-400 rounded-md px-1">
+                                Giảm chảy nước dãi, nhai nuốt khỏe, nói dễ.
+                        </span>
+                        </p>
+                    </a>
+
+                    <a href="https://www.youtube.com/watch?v=uvdncjviy3s" target="_blank" class="block bg-white p-6 rounded-xl shadow-lg text-center transform hover:-translate-y-2 transition-transform duration-300 no-underline">
+                        <div class="text-6xl mb-4">💪</div>
+                        <h3 class="text-xl font-bold text-sky-700 mb-2">
+                            <span contenteditable="true" class="focus:outline-none focus:ring-2 focus:ring-sky-500 rounded-md px-1">
+                                Bài tập vận động
+                            </span>
+                        </h3>
+                        <p class="text-gray-600">
+                        <span contenteditable="true" class="focus:outline-none focus:ring-2 focus:ring-gray-400 rounded-md px-1">
+                                Cải thiện khả năng vận động và linh hoạt.
+                        </span>
+                        </p>
+                    </a>
+
+                    <a href="https://www.youtube.com/watch?v=xL4tIP2fj1g" target="_blank" class="block bg-white p-6 rounded-xl shadow-lg text-center transform hover:-translate-y-2 transition-transform duration-300 no-underline">
+                        <div class="text-6xl mb-4">👄</div>
+                        <h3 class="text-xl font-bold text-amber-700 mb-2">
+                        <span contenteditable="true" class="focus:outline-none focus:ring-2 focus:ring-amber-500 rounded-md px-1">
+                                Bài tập nói
+                        </span>
+                        </h3>
+                        <p class="text-gray-600">
+                        <span contenteditable="true" class="focus:outline-none focus:ring-2 focus:ring-gray-400 rounded-md px-1">
+                                Cải thiện khả năng giao tiếp, chức năng nuốt.
+                        </span>
+                        </p>
+                    </a>
+
+                </div>
+            </div>
+        `;
+    }
+
+    async function renderHistoryView() {
+        mainContentArea.innerHTML = `
+            <div class="w-full max-w-5xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+                <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+                    <h2 class="text-3xl font-bold text-gray-800">Lịch sử các lượt đo</h2>
+                    <button id="analyze-history-btn" class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-2 px-5 rounded-lg font-semibold hover:opacity-90 disabled:bg-gray-400 disabled:from-gray-400" disabled>
+                        ✨ Phân tích tiến triển (AI)
+                    </button>
+                </div>
+                <div id="history-container" class="overflow-x-auto">
+                    <p class="text-gray-500">Đang tải dữ liệu...</p>
+                </div>
+            </div>`;
+
+        try {
+            const response = await fetch('/api/get_history');
+            const historyData = await response.json();
+
+            if (!response.ok) {
+                throw new Error(historyData.error || 'Lỗi không xác định');
+            }
+
+            const container = document.getElementById('history-container');
+            const analyzeBtn = document.getElementById('analyze-history-btn');
+
+            if (historyData.length < 2) {
+                container.innerHTML = '<p class="text-center text-gray-600">Bạn cần ít nhất 2 lượt đo để có thể phân tích sự tiến triển.</p>';
+                return; // Nút phân tích sẽ vẫn bị vô hiệu hóa
+            }
+
+            // Kích hoạt nút nếu có đủ dữ liệu
+            analyzeBtn.disabled = false;
+
+            // Gắn sự kiện click cho nút phân tích
+            analyzeBtn.addEventListener('click', async () => {
+                analyzeBtn.disabled = true;
+                analyzeBtn.innerHTML = '✨ Đang phân tích...';
+                showModal("Đang phân tích", "Trợ lý AI đang xử lý dữ liệu của bạn, vui lòng chờ trong giây lát...", true);
+
+                try {
+                    const aiResponse = await fetch('/api/analyze_history', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ history: historyData })
+                    });
+                    const result = await aiResponse.json();
+
+                    if (!aiResponse.ok) {
+                        throw new Error(result.error);
+                    }
+                    
+                    // Hiển thị kết quả phân tích trong modal
+                    hideModal();
+                    showModal("Phân tích tiến triển từ AI", result.analysis.replace(/\n/g, '<br>'));
+
+                } catch (err) {
+                    hideModal();
+                    showModal("Lỗi", `Không thể tạo phân tích: ${err.message}`);
+                } finally {
+                    analyzeBtn.disabled = false;
+                    analyzeBtn.innerHTML = '✨ Phân tích tiến triển (AI)';
+                }
+            });
+
+            // Đoạn code hiển thị bảng (giữ nguyên như cũ)
+            let tableHTML = `
+                <table class="min-w-full bg-white border border-gray-200">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600">Ngày đo</th>
+                            <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600">Điểm Quiz</th>
+                            <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600">Tần số run (Hz)</th>
+                            <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">`;
+
+            historyData.forEach((record, index) => {
+                const peakFreq = parseFloat(record['tần số run']);
+                const conclusion = (peakFreq >= 4.0 && peakFreq <= 7.0) 
+                    ? '<span class="font-semibold text-red-600">Có dấu hiệu Parkinson</span>' 
+                    : '<span class="font-semibold text-green-600">Không có dấu hiệu</span>';
+                tableHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-3 px-4 text-gray-700">${record['thời gian đo']}</td>
+                        <td class="py-3 px-4 text-gray-700">${record['điểm bảng câu hỏi']}</td>
+                        <td class="py-3 px-4 text-gray-700">${peakFreq.toFixed(2)} (${conclusion})</td>
+                        <td class="py-3 px-4 text-center">
+                            <button class="view-details-btn bg-blue-500 text-white text-xs py-1 px-3 rounded-md hover:bg-blue-600" data-index="${index}">Xem chi tiết</button>
+                        </td>
+                    </tr>`;
+            });
+            tableHTML += `</tbody></table>`;
+            container.innerHTML = tableHTML;
+
+            // Gắn lại sự kiện cho các nút xem chi tiết (giữ nguyên như cũ)
+            document.querySelectorAll('.view-details-btn').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const index = event.target.dataset.index;
+                    const detailedRecord = historyData[index];
+                    let details = `<p><strong>Ngày đo:</strong> ${detailedRecord['thời gian đo']}</p><p><strong>Tên:</strong> ${detailedRecord['họ và tên']}</p><p><strong>Điểm câu hỏi:</strong> ${detailedRecord['điểm bảng câu hỏi']}</p><p><strong>Tần số run:</strong> ${detailedRecord['tần số run']} Hz</p>`;
+                    details += '</div>';
+                    showModal("Chi tiết lượt đo", details);
+                });
+            });
+
+        } catch (error) {
+            document.getElementById('history-container').innerHTML = `<p class="text-red-500">Lỗi: ${error.message}</p>`;
+        }
     }
 
     // --- LOGIC MEDIAPIPE & CHẨN ĐOÁN ---
