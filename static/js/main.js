@@ -147,6 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'team': renderTeamView,
             'baitap': renderBaitapView,
             'history': renderHistoryView,
+            'aimri': renderAimriView,
         };
         (renderMap[viewName] || renderWelcomeView)();
     }
@@ -287,6 +288,115 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`;
         startGammaSimulation();
     }
+
+    function renderAimriView() {
+        mainContentArea.innerHTML = `
+            <div class="w-full max-w-2xl bg-white p-8 rounded-xl shadow-lg text-center animate-fade-in">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Phân tích MRI não</h2>
+                <p class="text-gray-600 mb-6">Tải lên ảnh MRI (định dạng .png, .jpg) để mô hình AI phân tích.</p>
+                
+                <form id="mri-upload-form">
+                    <div class="mt-4 border-2 border-dashed border-gray-300 rounded-lg p-8 hover:border-blue-500 transition-colors">
+                        <label for="mri-file-input" class="cursor-pointer flex flex-col items-center">
+                            <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-4-4V6a4 4 0 014-4h1.586A3 3 0 0112.586 3L14 5h4a2 2 0 012 2v10a2 2 0 01-2 2h-2m-2-2v-2m0 0h-2m2 0h2m-4-2H9m6-2H9m6 0H9"></path></svg>
+                            <span id="file-name-display" class="mt-2 text-sm font-medium text-gray-600">Chọn một tệp ảnh</span>
+                        </label>
+                        <input type="file" id="mri-file-input" class="hidden" accept="image/png, image/jpeg">
+                    </div>
+                    <button type="submit" id="mri-predict-btn" class="mt-6 w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400">
+                        Bắt đầu phân tích
+                    </button>
+                </form>
+
+                <div id="mri-result-container" class="mt-8 text-left hidden">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Kết quả phân tích:</h3>
+                    <div class="flex items-center gap-4">
+                        <div id="mri-preview" class="w-1/3">
+                            <img id="preview-image" src="#" alt="MRI Preview" class="rounded-lg shadow-md w-full object-cover"/>
+                        </div>
+                        <div id="mri-result-text" class="text-lg w-2/3 p-4 bg-gray-50 rounded-lg"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const form = document.getElementById('mri-upload-form');
+        const fileInput = document.getElementById('mri-file-input');
+        const predictBtn = document.getElementById('mri-predict-btn');
+        const fileNameDisplay = document.getElementById('file-name-display');
+        const resultContainer = document.getElementById('mri-result-container');
+        const resultText = document.getElementById('mri-result-text');
+        const previewImage = document.getElementById('preview-image');
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                fileNameDisplay.textContent = file.name;
+                const reader = new FileReader();
+                
+                // Hiển thị ảnh gốc cho người dùng xem
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            } else {
+                fileNameDisplay.textContent = 'Chọn một tệp ảnh';
+            }
+        });
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (fileInput.files.length === 0) {
+                showModal("Lỗi", "Vui lòng chọn một tệp ảnh MRI để phân tích.");
+                return;
+            }
+
+            // Gửi thẳng tệp ảnh gốc đi, không cần xử lý đen trắng
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            predictBtn.disabled = true;
+            predictBtn.textContent = 'Đang phân tích...';
+            resultContainer.classList.add('hidden');
+            showModal("Đang xử lý", "Mô hình AI đang phân tích ảnh MRI, vui lòng chờ...", true);
+
+            try {
+                const response = await fetch('/api/predict_mri', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                hideModal();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Lỗi không xác định từ máy chủ.');
+                }
+                
+                resultText.innerHTML = `
+                    <p class="mb-2">
+                        <span class="font-semibold">Kết luận:</span>
+                        <span class="font-bold ${result.conclusion.includes('Có') ? 'text-red-600' : 'text-green-600'}">
+                            ${result.conclusion}
+                        </span>
+                    </p>
+                    <p>
+                        <span class="font-semibold">Độ chắc chắn:</span>
+                        <span>${result.confidence}</span>
+                    </p>
+                `;
+                resultContainer.classList.remove('hidden');
+
+            } catch (error) {
+                hideModal();
+                showModal("Phân tích Thất bại", error.message);
+            } finally {
+                predictBtn.disabled = false;
+                predictBtn.textContent = 'Bắt đầu phân tích';
+            }
+        });
+    }
+  
 
     function renderDoctorView() {
         mainContentArea.innerHTML = `
