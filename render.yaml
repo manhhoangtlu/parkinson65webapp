@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: parkinson-webapp # Bạn có thể đặt tên khác nếu muốn
+    env: python
+    plan: free # Hoặc plan trả phí nếu bạn dùng
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn app:app"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.4 # Hoặc phiên bản Python bạn dùng
+      - key: GSPREAD_CREDENTIALS
+        fromService:
+          type: secret_file
+          name: gspread-credentials
+          key: credentials.json
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+    buildFilter:
+      paths:
+      - "src/**"
+    previewsEnabled: true
