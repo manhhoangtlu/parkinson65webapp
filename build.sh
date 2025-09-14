@@ -18,7 +18,7 @@ tar -xzf "${LFS_TARBALL}"
 export PATH="$PWD/git-lfs-${LFS_VERSION}:$PATH"
 
 # Cấu hình Git LFS
-git lfs install
+git lfs install --force
 
 # Tải các tệp lớn từ LFS
 git lfs pull
